@@ -1,0 +1,81 @@
+head
+    include ./components/header  
+    script. 
+        gameBoard = #{gameBoard}
+        game_row = 10
+        game_col = 8
+        
+        window.onload = function() {
+            canvas = document.getElementById("gameCanvas");
+            ctx = canvas.getContext("2d");
+            canvas.width = 0.4 * 10000;
+            canvas.height = 0.5 * 10000;
+            //- canvas.width = 0.4 * screen.width;
+            //- canvas.height = 1.2 * canvas.width;
+            //- canvas.style.width  = '600px';
+            //- canvas.style.height = '600px';
+            this.drawGame()
+        };
+        function playMove(id,turn,col){
+            let req = new XMLHttpRequest();
+            req.onreadystatechange = function(){
+                if (this.readyState == 4 && this.status == 200) {
+                    let res = JSON.parse(req.responseText)
+                    console.log({res})
+                }
+            }
+            req.open("POST",`/play/${id}/${turn}/${col}`);
+            req.send();
+        }
+        function drawGame(){
+            canvas = document.getElementById("gameCanvas");
+            ctx = canvas.getContext("2d");
+            radius = canvas.width / game_col / 2
+            for (i = 0; i < game_row; i++) {
+                for (j = 0; j < game_col; j++) {
+                    let center_y = canvas.height / game_row * i + 0.5 * (canvas.height / game_row);
+                    let center_x = canvas.width / game_col * j + 0.5 * (canvas.width / game_col);
+                    if (gameBoard[i][j] == 0) {
+                        drawChip(center_x, center_y, radius - 2, "grey", ctx);
+                    } else if (gameBoard[i][j] == 1) {
+                        drawChip(center_x, center_y, radius - 2,"red", ctx);
+                    } else {
+                        drawChip(center_x, center_y, radius - 2, "green", ctx);
+                    }
+                }
+            }  
+            function drawChip(center_x, center_y, radius, color) {
+                ctx.beginPath();
+                ctx.arc(center_x, center_y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+            } 
+        }
+        
+    //- style(type="text/css").
+    //-     .wide {
+    //-         width: 600px;
+    //-         height: 60px;
+    //-     }
+
+    title Game page
+body
+    include ./components/navbar
+    div(class="d-flex flex-wrap h-100")
+        div#game-container(class="h-100 px-5" style="max-width:600px;")
+            div(class="btn-group w-100 justify-content-between")
+                each col in [1,2,3,4,5,6,7,8]
+                    a(class="button flex-fill text-center" href="javascript:playMove(\""+id +"\",\""+ turn +"\",\""+ col +"\")") &darr;
+            canvas#gameCanvas(class="w-100 h-75")
+        div#side-container(class="flex-row")
+            h3 Players:
+            h4 #{players[0]}(red) VS. #{players[1]}(green)
+            h3 Turn:
+            if turn==1
+                h4 #{players[0]}  
+            else
+                h4 #{players[1]}
+            h3 Game privacy:
+            h4 #{privacy}
+            h3 Chat:
+            h4 #{chat}       

@@ -1,0 +1,18 @@
+head
+  include ./components/header  
+  title Sign Up
+body
+  include ./components/navbar
+  
+  div.under-nav-container
+    h4 SIGN UP
+    form(action="/signup" method="POST")
+        label(for='signup') Username
+        input(type="text" name="username")
+        br
+        label(for='signup') Password
+        input(type="text" name="password")
+        br
+        label(for='signup') Re-type Password
+        input(type="text" name="retype")
+        button(type="submit") Sign Up

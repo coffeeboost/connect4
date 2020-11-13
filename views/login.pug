@@ -1,0 +1,22 @@
+head
+  include ./components/header  
+  title Login
+body
+  include ./components/navbar
+  
+  div.under-nav-container
+    h4 LOG IN
+    form(action="/login" method="POST")
+      label(for='username') Username
+      input(type="text" name="username")
+      br
+      label(for='password') Password
+      input(type="text" name="password")
+      button(type="submit") Log In
+  footer(class="page-footer fixed-bottom ")
+    .container
+      ul(class="list-unstyled. ist-inline text-center py-2")
+        li.list-inline-item
+          h5.mb-1 Don't have an account?
+        li.list-inline-item
+          a.btn.btn-outline-white.btn-rounded(href='/signup') Sign up!

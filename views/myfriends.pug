@@ -1,0 +1,90 @@
+head
+  include ./components/header  
+  //- include ./components/reload
+  title My Friends
+
+body
+  include ./components/navbar
+
+  .under-nav-container
+    h2 Friend Requests:
+    ul#friendReqID
+      each x in friendReq
+        li
+          = x.name
+          a(class='button' href='/viewProfile/' + x.name) view 
+          if x.status == "received"
+            button(onclick='putRequest(\''+'accept'+'\',\''+x.name+'\')') accept
+            button(onclick='deleteRequest(\''+'reject'+'\',\''+x.name+'\')') reject
+      
+    h2#friendsID All Friends:
+    each x in allFriends
+      ul
+        li
+          = x
+          a( class='button' href='/viewProfile/' + x) view 
+          a(class='button' href='/createGame') match 
+          button(onclick='deleteRequest(\''+'remove'+'\',\''+x+'\')') remove
+
+
+    h2 Search for players:
+    form(action="/search" method="POST")
+      input(type="text" name="input" placeholder="Search")
+      button(type="submit") Search2
+    if searchResults
+      div #{searchResults}
+
+  script. 
+    function putRequest(route,name){
+      console.log("http://localhost:3000/"+route+"/"+name)
+      let req = new XMLHttpRequest();
+      req.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          let resFriendReq = JSON.parse(req.responseText).friendReqArr
+          let resFriend = JSON.parse(req.responseText).friendsArr
+
+          let listParent = document.getElementById("friendReqID")
+          listParent.innerHTML = ""
+          resFriendReq.forEach((obj)=>{
+
+            let listChild = document.createElement("li")
+            listChild.innerHTML =  obj.name
+            let viewAnchorTag = document.createElement("a")
+            viewAnchorTag.class = "button"
+            viewAnchorTag.href = `/viewProfile/${obj.name}`
+            viewAnchorTag.innerHTML = "view"
+            listChild.append(viewAnchorTag)
+        
+            if(obj.status == "received"){
+              let acceptButtonTag = document.createElement("button")
+              let rejectButtonTag = document.createElement("button")
+
+              acceptButtonTag.onclick = `putRequest(\"accept\",\"${obj.name}\")`
+              acceptButtonTag.innherHTML = "accept"            
+              acceptButtonTag.class = "button"
+
+              rejectButtonTag.onclick = `deleteRequest(\"reject\",\"${obj.name}\")`
+              rejectButtonTag.innherHTML = "reject"            
+              rejectButtonTag.class = "button"
+
+              listChild.append(acceptButtonTag)            
+              listChild.append(rejectButtonTag)
+
+            }
+            listParent.append(listChild)
+          })
+        }
+      }
+      req.open("PUT","/"+route+"/"+name);
+      req.send();
+    }
+    function deleteRequest(route,name){
+      let req = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          document.getElementById(route+"-"+name).innerHTML = "friendReqID";
+        }
+      }
+      req.open("DELETE","/"+route+"/"+name);
+      req.send();
+    }

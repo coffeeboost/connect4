@@ -1,0 +1,30 @@
+head
+    include ./components/header  
+    title create game
+body
+    include ./components/navbar
+    .under-nav-container
+        h2 Search For Player:
+        form(action="/search2" method="POST")
+            input(type="text" name="input" placeholder="Search")
+            button(type="submit") Search2
+        if searchResults
+            div #{searchResults}
+        h2 Create Game
+        form(action='/createGame', method='post')
+            label(for='createGame') Opponent name
+            br
+            input(name='userB', type='text')
+            br
+            label(for='createGame') Choose your privacy
+            br
+            input(name='privacy', type='radio',value="public")
+            label(for='createGame') Public
+            br
+            input(name='privacy', type='radio',value="private")
+            label(for='createGame') Private
+            br
+            input(name='privacy', type='radio',value="friends_only")
+            label(for='createGame') Friends only
+            br
+            input(type='submit', value='Create Game')

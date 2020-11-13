@@ -1,0 +1,61 @@
+head
+  include ./components/header  
+  title My Games
+body
+  include ./components/navbar
+
+  .under-nav-container
+  h2 #{user}'s account
+  h3 Current active games:
+  if active.length == 0
+    h4#activeID  no active games
+  else
+    h4#activeID 
+      ul
+        each g in active
+          li
+            = "game #" + g 
+            a(class="button" href="javascript:forfeit(\""+g+"\")") forfeit
+            a(class='button' href='/game/' + g) play
+
+  script. 
+    function forfeit(g){
+      console.log("forf")
+      let req = new XMLHttpRequest();
+      req.onreadystatechange = function(){
+        if (this.readyState == 4 && this.status == 200) {
+          let activeArr = JSON.parse(req.responseText)
+          console.log({activeArr})
+          //render active games
+          let activeParent = document.getElementById("activeID")
+          activeParent.innerHTML = ""
+          let activeChild = document.createElement("h4")         
+          if(activeArr.length == 0){
+            activeChild.innherHTML = "no active games"
+          }
+          else{
+            let listParent = document.createElement("ul")
+            activeArr.forEach((gameID)=>{
+              let listChild = document.createElement("li")
+              let forfeitAnchorTag = document.createElement("a")
+              let playAnchorTag = document.createElement("a")
+              forfeitAnchorTag.class = "button"
+              forfeitAnchorTag.href = `forfeit(\'${gameID}\')`
+              forfeitAnchorTag.innerHTML = "forfeit"
+              playAnchorTag.class = "button"
+              playAnchorTag.href = `/game/${gameID}`
+              playAnchorTag.innerHTML = "play"   
+              listChild.innerHTML = `game #${gameID}`
+              listChild.append(forfeitAnchorTag)          
+              listChild.append(playAnchorTag)     
+              listParent.append(listChild)
+            })
+            activeChild.append(listParent)
+          }
+          activeParent.append(activeChild)
+        }
+      }
+      req.open("PUT",`/forfeit/${g}`);
+      req.send();
+    }
+

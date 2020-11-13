@@ -1,0 +1,30 @@
+head
+    include ./components/header  
+    title Preferences
+body
+    include ./components/navbar
+
+    .under-nav-container
+    h2 Hello #{user}! 
+    h3 This is your profile:
+    h3 Privacy: #{privacy}
+    h3 change your privacy:
+    h4 What your privacy means?
+    h5 Only-friends means only you and friends can view your only friends game
+    h5 Private means only yyou can see your games
+    h5 Public means everyone can see your games and search to play with you
+    form(action="/profilePrivacy" method="post")
+        label(for="profilePrivacy") Choose your privacy:
+        br
+        input(name="privacy" type="radio" value="public")
+        label(for="profilePrivacy") Public
+        br
+        input(name='privacy', type='radio',value="private")
+        label(for='profilePrivacy') Private
+        br
+        input(name='privacy', type='radio',value="friends_only")
+        label(for='profilePrivacy') Friends only
+        br
+        input(type='submit', value='Create Game')
+    
+           

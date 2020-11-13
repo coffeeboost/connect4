@@ -1,0 +1,25 @@
+head
+    include ./components/header  
+    title Login
+body
+    include ./components/navbar
+    .under-nav-container
+        h2 Viewing #{userB}'s profile
+        h3 Summary statistics:
+        h5 Total games played: #{summary.total}
+        h5 Win percentage: #{summary.win/summary.total*100}
+        h3 Current active games:
+        each game_id in active
+            h5 Game id: #{game_id} 
+                a(href="/viewGame/"+game_id) View
+        h3 Last 5 Games:
+        each obj in history
+            h5 Game id: #{obj.id} 
+                if obj.viewable
+                    a(href="/viewGame/"+game_id) View
+                else
+                    span cannot view a private game
+            h5 Players: #{obj.players} 
+            h5 Winner:#{obj.winner}
+
+
