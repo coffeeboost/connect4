@@ -1,5 +1,6 @@
 head
-    include ./components/header  
+    include ./components/header 
+    //- include ./components/reload 
     script. 
         gameBoard = #{gameBoard}
         game_row = 10
@@ -10,10 +11,6 @@ head
             ctx = canvas.getContext("2d");
             canvas.width = 0.4 * 10000;
             canvas.height = 0.5 * 10000;
-            //- canvas.width = 0.4 * screen.width;
-            //- canvas.height = 1.2 * canvas.width;
-            //- canvas.style.width  = '600px';
-            //- canvas.style.height = '600px';
             this.drawGame()
         };
         function playMove(id,turn,col){
@@ -21,7 +18,14 @@ head
             req.onreadystatechange = function(){
                 if (this.readyState == 4 && this.status == 200) {
                     let res = JSON.parse(req.responseText)
+                    //THIS DOES NOT UPDATE THE PAGE AS EXPECTED
                     console.log({res})
+                    let b = document.getElementById("gameCanvas");
+                    let t = document.getElementById("turn");
+                    drawGame(board)
+                    console.log(t)
+                    t.setInnerHTML = ""
+                    t.setInnerHTML = res.turn
                 }
             }
             req.open("POST",`/play/${id}/${turn}/${col}`);
@@ -52,11 +56,6 @@ head
             } 
         }
         
-    //- style(type="text/css").
-    //-     .wide {
-    //-         width: 600px;
-    //-         height: 60px;
-    //-     }
 
     title Game page
 body
@@ -72,9 +71,9 @@ body
             h4 #{players[0]}(red) VS. #{players[1]}(green)
             h3 Turn:
             if turn==1
-                h4 #{players[0]}  
+                h4#turn #{players[0]}  
             else
-                h4 #{players[1]}
+                h4#turn #{players[1]}
             h3 Game privacy:
             h4 #{privacy}
             h3 Chat:

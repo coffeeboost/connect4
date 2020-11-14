@@ -4,54 +4,39 @@ import session from 'express-session'
 import accountsData from "./dummyaccounts.js"
 import gamesData from "./dummygames.js"
 
-
 const app = express() //set up server
-
+const port=3000
 app.use(session({secret: 'codingdefined', resave: false, saveUninitialized: true}));
-
-
-app.set('view engine', 'pug') //set up pug
-
 app.use(express.static('public'))
 app.use(express.urlencoded({extended: true}))
-//suggested middleware
-app.use(function(req,res,next){
-    console.log("-------------------------");
-    console.log("Request Method: "+ req.method);
-    console.log("Request URL: "+ req.url);
-    console.log("Request PATH: "+ req.path);
-    console.log("Request Session: " + req.session);
-    console.log(req.session)
-    console.log();
-    next();
-});
-const port=3000
-app.listen(port, () => {console.log(`app listening at http://localhost:${port}`)})
+app.set('view engine', 'pug')
+app.listen(port)
 
 //REST API
-//render screen routes
+/**
+ * missing REST routes
+ * GET /games that is public information 
+ * GET /users that is public information (currently only serach name)
+ */
+//session control routes
 app.get("/", renderLogin)
-
 app.post("/login", login, auth, renderMyGames)
 app.post("/logout",logout,renderLogin)
 app.route("/signup").get(renderSignUp).post(createUser,auth,renderMyProfile)
 
-//page routes
+//render page routes
 app.get("/myfriends",auth,renderMyFriends)
 app.get("/mystats",auth,renderMyStats)
 app.get("/myprofile",auth,renderMyProfile)
 app.get("/mygames", auth, renderMyGames)
-app.get("/howtoplay",(req,res,next)=>{res.render("howtoplay")});
+app.get("/howtoplay",renderHowToPlay);
 
 //myfriends functions
 app.get("/viewProfile/:userB",auth,renderViewProfile)
-// app.put("/accept/:userB",auth,acceptFriend,renderMyFriends)
-// app.delete("/remove/:userB",auth,removeFriend,renderMyFriends)
-// app.delete("/reject/:userB",auth,rejectRequest,renderMyFriends)
 app.put("/accept/:userB",auth,acceptFriend)
 app.delete("/remove/:userB",auth,removeFriend)
 app.delete("/reject/:userB",auth,rejectRequest)
-
+app.post("/user/:userB",auth,searchUser)
 
 //game functions
 app.get("/game/:id", auth,renderGame)
@@ -59,53 +44,11 @@ app.post("/play/:id/:turn/:col",auth,playMove)
 app.route("/creategame",auth).get(renderCreateGameScreen).post(createGame)
 app.put("/forfeit/:id",auth,forfeitGame)
 
-app.post("/search2",searchForResults,renderCreateGameScreen)
-app.post("/search",searchForResults,renderMyFriends)
-
-//app.get("/user/:query", u)
-/**
- * ajax request
- * get request to users/:id, handle (DOM manipulate)
- * 
- */
-
 //myprofile functions
 app.post("profilePrivacy", auth, updatePrivacy,renderMyProfile)
 
-
-function forfeitGame(req,res){
-    let user = req.session.username
-    let userB; 
-    let id = req.params.id
-    //set winner
-    for(let g in gamesData){
-        if(id == g){
-            let winner = gamesData[g].players.indexOf(user) == 0 ?  gamesData[g].players.slice(1)[0] : gamesData[g].players.slice(0,1)[0]
-            userB = winner
-            gamesData[g].result = winner
-            console.log(winner)
-
-            break
-        }
-    }
-    console.log(userB)
-
-    //remove active user A user B
-    //add to history user A user B
-    removeFromActive(user,userB,id)
-    addGameToHistory(user,userB,id)
-    
-    //return active games
-    console.log(accountsData[user].active)
-    res.status(200).send(JSON.stringify(accountsData[user].active))
-}
-function updatePrivacy(req,res,next){
-    for(let u in accountsData){
-        if(u == req.session.username){
-            accountsData[u].privacy = req.body.privacy
-            next()
-        }    
-    }
+function renderHowToPlay(req,res){
+    res.render("howtoplay")
 }
 function renderSignUp(req,res){
     res.render("signup")
@@ -114,7 +57,7 @@ function renderViewProfile(req,res){
     let user = req.session.username
     let userB = req.params.userB
     let data = getUserBSummary(user,userB)
-    console.log({data})
+    // console.log({data})
     res.render("viewprofile",{user:user,userB:userB,summary:data.summary,
                             active:data.active,history:data.history})
 }
@@ -126,10 +69,6 @@ function renderCreateGameScreen(req,res,){
     else{
         res.render("creategame")
     }
-}
-function searchForResults(req,res,next){
-    res.locals.results = getSearchResults(req.body.input)
-    next()
 }
 function renderMyFriends(req,res){
     let user = req.session.username
@@ -157,13 +96,12 @@ function renderGame(req,res){
 function renderMyProfile(req,res){
     let user = req.session.username
     let privacy = getPrivacy(user)
-    res.render("mystats",{user:user,privacy:privacy})
-
-
+    res.render("myprofile",{user:user,privacy:privacy})
 }
 function renderMyStats(req,res){
     let user = req.session.username
     let history = getGameHistory(user)
+    console.log(history)
     res.render("mystats",{user:user,history:history})
 
 
@@ -188,6 +126,7 @@ function playMove(req,res,next){
     
     //check if it is current session user's turn
     if(gameData.players.indexOf(user) != turn-1){
+        console.log("te")
         res.stats(400).send("not your turn bitch")
     } 
     else{
@@ -222,7 +161,10 @@ function playMove(req,res,next){
             }
             res.status(200).send(JSON.stringify(data))
         }
-        res.stats(400).send("move not valid dumbass")
+        else{
+            res.status(400).send("move not valid dumbass")
+        }
+       
     }
 }
 function addGameToHistory(u,uB,id){
@@ -420,15 +362,6 @@ function getAllFriends(u){
         }
     }
 }
-function getSearchResults(i){
-    let results = []
-    for(let user in accountsData){
-        if (user.includes(i)){
-            results.push(user)
-        }
-    }
-    return results;
-}
 function getUserBSummary(currUser,uB){
     let result = {}
 
@@ -556,4 +489,42 @@ function checkWinner(board) {
         }
     }
     return 0;
+}
+
+function searchUser(req,res){
+    let name = req.params.userB
+    res.status(200).send(JSON.stringify(Object.keys(accountsData).filter((user)=>user.includes(name))))
+}
+function forfeitGame(req,res){
+    let user = req.session.username
+    let userB; 
+    let id = req.params.id
+    //set winner
+    for(let g in gamesData){
+        if(id == g){
+            let winner = gamesData[g].players.indexOf(user) == 0 ?  gamesData[g].players.slice(1)[0] : gamesData[g].players.slice(0,1)[0]
+            userB = winner
+            gamesData[g].result = winner
+            // console.log(winner)
+
+            break
+        }    }
+    // console.log(userB)
+
+    //remove active user A user B
+    //add to history user A user B
+    removeFromActive(user,userB,id)
+    addGameToHistory(user,userB,id)
+    
+    //return active games
+    // console.log(accountsData[user].active)
+    res.status(200).send(JSON.stringify(accountsData[user].active))
+}
+function updatePrivacy(req,res,next){
+    for(let u in accountsData){
+        if(u == req.session.username){
+            accountsData[u].privacy = req.body.privacy
+            next()
+        }    
+    }
 }

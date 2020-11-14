@@ -17,8 +17,22 @@ body
             = "game #" + g 
             a(class="button" href="javascript:forfeit(\""+g+"\")") forfeit
             a(class='button' href='/game/' + g) play
+  include ./components/search.pug
 
   script. 
+    function search(){
+      let req = new XMLHttpRequest();
+      console.log(document.getElementById("userInput").value)
+      req.onreadystatechange = function(){
+        if (this.readyState == 4 && this.status == 200) {
+          let resultContainer = document.getElementById("results")
+          results.innerHTML = ""
+          results.innerHTML = JSON.parse(req.responseText)
+        }
+      }
+      req.open("POST",`/user/${document.getElementById("userInput").value}`);
+      req.send();
+    }
     function forfeit(g){
       console.log("forf")
       let req = new XMLHttpRequest();

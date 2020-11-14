@@ -7,4 +7,7 @@ body
   .under-nav-container
   h2 #{user}'s Statistics
   h3 All Game History 
-  h4 #{history}
+  if history
+    h4 #{history}
+  else
+    h4 no game in history

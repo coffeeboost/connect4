@@ -25,16 +25,25 @@ body
           a( class='button' href='/viewProfile/' + x) view 
           a(class='button' href='/createGame') match 
           button(onclick='deleteRequest(\''+'remove'+'\',\''+x+'\')') remove
+  include ./components/search.pug
+  h2 Send Friend Request Form:
+  h4 Does not exist yet...
 
-
-    h2 Search for players:
-    form(action="/search" method="POST")
-      input(type="text" name="input" placeholder="Search")
-      button(type="submit") Search2
-    if searchResults
-      div #{searchResults}
 
   script. 
+    function search(){
+        let req = new XMLHttpRequest();
+        console.log(document.getElementById("userInput").value)
+        req.onreadystatechange = function(){
+          if (this.readyState == 4 && this.status == 200) {
+            let resultContainer = document.getElementById("results")
+            results.innerHTML = ""
+            results.innerHTML = JSON.parse(req.responseText)
+          }
+        }
+        req.open("POST",`/user/${document.getElementById("userInput").value}`);
+        req.send();
+      }
     function putRequest(route,name){
       console.log("http://localhost:3000/"+route+"/"+name)
       let req = new XMLHttpRequest();
