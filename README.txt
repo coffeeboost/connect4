@@ -13,6 +13,7 @@ NOTE:
     been inconsistent. I have a work around, in that you can set timeout a page 
     refresh if you include ./components/reload in the header of a pug file. But 
     that method makes the website looks like it has a seizure.
+- Don't press enter when searching. Instead press the submit button. (need to fix)
 - I'd say I'm missing 4 functions, better CSS, and a database. But otherwise... I should be good.
 
 
@@ -98,6 +99,7 @@ username is: student@134.117.130.233
 password is: topsecretpassword
 
 instructions to launch and test the website:
+connect to Carleton's VPN, then
 in the terminal, type:
 ssh student@134.117.130.233
 login in with password:

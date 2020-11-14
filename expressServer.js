@@ -41,7 +41,7 @@ app.post("/user/:userB",auth,searchUser)
 //game functions
 app.get("/game/:id", auth,renderGame)
 app.post("/play/:id/:turn/:col",auth,playMove)
-app.route("/creategame",auth).get(renderCreateGameScreen).post(createGame)
+app.route("/creategame",auth).get(renderCreateGameScreen).post(createGame,renderMyGames)
 app.put("/forfeit/:id",auth,forfeitGame)
 
 //myprofile functions
@@ -186,6 +186,7 @@ function logout(req, res, next){
 }
 function login(req, res, next){
 	if(req.session.loggedin){
+        
         console.log("already logged in")
         next();
     }
@@ -271,9 +272,10 @@ function createGame(req,res){
         //update users
         accountsData[user].active.push(uid)
         accountsData[userB].active.push(uid)
+        
     }
-
-    res.status(200).send("ok")
+    next()
+    // res.status(200).send("ok")
 }
 function rejectRequest(req,res,next){
     let user = req.session.username

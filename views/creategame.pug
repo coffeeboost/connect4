@@ -5,11 +5,7 @@ body
     include ./components/navbar
     .under-nav-container
         h2 Search For Player:
-        form(action="/search2" method="POST")
-            input(type="text" name="input" placeholder="Search")
-            button(type="submit") Search2
-        if searchResults
-            div #{searchResults}
+        include ./components/search.pug
         h2 Create Game
         form(action='/createGame', method='post')
             label(for='createGame') Opponent name
