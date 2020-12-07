@@ -1,51 +1,361 @@
-import { v4 as uuidv4 } from 'uuid'
-import express from "express";
-import session from 'express-session'
-import accountsData from "./dummyaccounts.js"
-import gamesData from "./dummygames.js"
+const express = require('express')
+const session = require("express-session")
+const app = express()
 
-const app = express() //set up server
-const port=3000
-app.use(session({secret: 'codingdefined', resave: false, saveUninitialized: true}));
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
+
+const sessionMiddleware = session({secret: 'codingdefined', resave: false, saveUninitialized: true});
+app.use(sessionMiddleware);
+io.use((socket, next) => {
+  sessionMiddleware(socket.request, {}, next);
+});
+
+
+const accountsData = require("./dummyaccounts.json")
+const gamesData = require("./dummygames.json")
+const { v4: uuidv4 } = require('uuid');
+// const { timeStamp } = require('console');
+// const { get } = require('http');
+// const { UV_FS_O_FILEMAP } = require('constants');
+
 app.use(express.static('public'))
 app.use(express.urlencoded({extended: true}))
 app.set('view engine', 'pug')
-app.listen(port)
 
-//REST API
-/**
- * missing REST routes
- * GET /games that is public information 
- * GET /users that is public information (currently only serach name)
- */
-//session control routes
+const port=3000
+server.listen(3000, ()=>{console.log('http://localhost:3000/');});
+
+io.on('connection', (socket) => {
+    const session = socket.request.session;
+    io.emit("chat message", `${session.username} entered the chat`)
+    socket.on('chat message', (msg) => {
+        io.emit('chat message', `${session.username}: `+msg);
+      });
+    socket.on('disconnect', () => {
+        io.emit("chat message", `${session.username} left the chat`)
+    });
+});
+
 app.get("/", renderLogin)
-app.post("/login", login, auth, renderMyGames)
+app.post("/login", login)
 app.post("/logout",logout,renderLogin)
 app.route("/signup").get(renderSignUp).post(createUser,auth,renderMyProfile)
 
 //render page routes
 app.get("/myfriends",auth,renderMyFriends)
 app.get("/mystats",auth,renderMyStats)
-app.get("/myprofile",auth,renderMyProfile)
+app.route("/myprofile").get(auth,renderMyProfile)
+                        .post(auth, updatePrivacy)
 app.get("/mygames", auth, renderMyGames)
 app.get("/howtoplay",renderHowToPlay);
 
 //myfriends functions
-app.get("/viewProfile/:userB",auth,renderViewProfile)
-app.put("/accept/:userB",auth,acceptFriend)
-app.delete("/remove/:userB",auth,removeFriend)
-app.delete("/reject/:userB",auth,rejectRequest)
-app.post("/user/:userB",auth,searchUser)
+app.get("/users",publicSearchUser)
+app.route("/users/:name").get(publicSearcSpecifichUser)
+                            .put(auth,acceptFriend)
+                            .delete(auth,rejectRequest)
+app.route("/friend/:name").delete(auth,removeFriend)
+                            .put(auth,sendFriendReq)
+
 
 //game functions
 app.get("/game/:id", auth,renderGame)
+app.get("/games",publicGameHandler)
 app.post("/play/:id/:turn/:col",auth,playMove)
-app.route("/creategame",auth).get(renderCreateGameScreen).post(createGame,renderMyGames)
+app.route("/creategame",auth).get(renderCreateGameScreen).post(createGame)
 app.put("/forfeit/:id",auth,forfeitGame)
+app.get("/load/:id/",auth, gameDataHandler)
+app.get("/spectateGame/:id",auth,renderSpectateGame)
 
-//myprofile functions
-app.post("profilePrivacy", auth, updatePrivacy,renderMyProfile)
+//404
+app.get('*', handle404)
+app.get('*/*', handle404)
+app.get('*/*/*', handle404)
+app.get('*/*/*/*', handle404)
+
+
+
+
+
+
+//add !help in chat
+//clicks, server checks auth, sends user to spectate
+//sends id, sends user to spectate without buttons or respond with error
+
+function gameDataHandler(req,res){
+    let id  = req.params.id;
+    let query = req.query
+    // let game = getGame(id)
+    let gameData = getGame(id)
+    // let board = gameData["history"].last()
+    let index;
+    let board;
+    if(req.header("Accept") == "application/json"){
+        gameData.gameBoard = gameData["history"].last()
+        gameData.end = gameData.result != "na"
+        res.json(gameData)
+    }
+    if(Object.keys(query).length != 0){
+        if(query.index){
+            console.log("specific game board was requested")
+            index = req.query.index
+            // console.log(index)
+            // console.log(id)
+            board = JSON.stringify(getPastGameBoard(id,index))
+            let next = parseInt(index) + 1
+            let prev = parseInt(index) - 1 
+            // gameData = Object.assign({},gameData,{display:board,index:index,next:next,prev:prev})
+            // console.log(gameData)
+            
+            res.render('viewgame',{display:board,id:id,players:gameData.players,index:index,next:next,prev:prev,length:gameData.history.length})
+        }
+        else{
+            console.log('query param does not exist')
+        }
+    }
+    else{
+        console.log('returning data on game')
+    }
+    // if(hasAuthorization(id,req.session.username)){
+    //     if(Object.keys(query).length != 0){
+    //         if(query.index){
+    //             console.log("specific game board was requested")
+    //             index = req.query.index
+    //             board = getPastGameBoard(id,index)
+    //             res.render('viewgame',gameData)
+    //         }
+    //         else{
+    //             console.log('query param does not exist')
+    //         }
+    //     }
+    //     else{
+    //         console.log('returning data on game')
+    //         // res.status(200).
+    //     }
+    // }
+    // else{
+    //     console.log("no auth to view game")
+    // }
+    
+}
+function getPastGameBoard(gid,index){
+    return gamesData[gid].history[index]
+    // if(gamesData[gid].result != "na") { 
+    //     if(index<0 || index> gamesData[gid].history.length-1)return null;
+    //     return gamesData[gid].history[index]
+    // }
+    // return null;
+}
+// function renderViewGame(req,res){
+//     let id  = req.params.id;
+//     let index = req.params.index; 
+//     let gameBoard;
+//     if(hasAuthorization(id,req.session.username)){
+//         gameBoard = getPastGameBoard(id,index);
+//         res.render("viewgame",{id:id,gameBoard:JSON.stringify(gameBoard),index:index})
+//     }
+//     else{
+//         res.status(400).send("you do not have perms to view game")
+//     }
+// }
+// function returnGameData(req,res){
+//     let id = req.params.id
+//     let gameData = gamesData[id]
+//     let board =gameData.history[gameData.history.length-1]
+//     let players = gameData.players
+//     let chat = gameData.chat
+//     let turn = gameData.turn
+//     let privacy = gameData.privacy
+//     let end = gameData.result == "na"
+//     res.status(200).send(JSON.stringify({gameBoard:board,players:players,chat:chat,turn:turn,privacy:privacy,id:id, end:end}))
+// }
+function handle404(req,res){
+    res.status(404).render("404");
+}
+function publicGameHandler(req,res){
+    let result= [];
+    let gameArr = Object.keys(gamesData)
+    //filter if params are given
+    if(Object.keys(req.query).length != 0 ){
+        // console.log("params were given")
+        if(req.query.player){
+            gameArr = result.filter((id)=>gamesData[id].players.include(req.query.player))
+        }
+        if(req.query.active){
+            gameArr = result.filter((id)=>gamesData[id].result=="na")
+        }
+    }
+    gameArr.forEach((id)=>{
+        let status = gamesData[id].result=="na"?"in progress":"completed"
+        let info = {
+            name:gamesData[id].players,
+            status:status
+        }
+        let completeData;
+        if(status == "completed"){
+            completeData = {
+                winner:gamesData[id].result, 
+                numberOfTurns:gamesData[id].history.length,
+                forfeited:gamesData[id].forfeit
+            }
+            info = Object.assign({},info,completeData)
+        }
+        if(req.query.detail == "full"){//update moves list in play move
+            info = Object.assign({},info,{moves:gamesData[id].moves})
+        }
+        result.push(info)      
+    })
+    res.status(200).json(result)
+}
+function publicSearcSpecifichUser(req,res){
+    let name = req.params.name
+    let user = req.session.username
+    if(req.accept == "applications/json" || !user){
+        if(Object.keys(accountsData).includes(name)){
+            if(accountsData[name].privacy == "public"){
+                let result = getPublicProfile("NOT_A_FRIEND",name)
+                res.status(200).json(result)
+            }
+            else{
+                // console.log("user is not set to public")
+                res.status(200).json("user is not set to public")
+            }
+        }
+        else{
+            // console.log("name does not exist")
+            res.status(200).json("name does not exist")
+        }
+    }
+    else{
+        let publicData = getPublicProfile(user,name)
+        let history = getViewableHistoryGames(user,accountsData[name])
+        let friendsOfCurrUser = getUser(user).friends.includes(name)
+        let friendsOnlyData = {history:history,user:user,friendsOfCurrUser:friendsOfCurrUser}
+        let data = Object.assign({},publicData,friendsOnlyData)
+        res.render("viewprofile",data)
+    }
+
+
+}
+
+function getPublicProfile(user,userB){
+    let summary = accountsData[userB].summary
+    let active = getViewableActiveGames(user,accountsData[userB])
+    let total = summary.total
+    let wins = summary.win
+    let winPercentage = wins/total*100
+    return {name:userB,active:active,winPercentage:winPercentage,total:total,wins:wins}
+}
+
+function getViewableActiveGames(u,uB){
+    let results = []
+
+    uB.active.forEach((id)=>{
+        let p = gamesData[id].privacy
+        if(p=="friends_only"){
+            if(uB.friends.includes(u)){
+                results.push(id)
+            }
+        }
+        else if(p=="public"){
+            results.push(id)
+        }
+    })
+    return results
+}
+function getViewableHistoryGames(u,uB){
+    let results = []
+
+    let len = uB.history.length
+    let last5Arr = len<=5 ? uB.history : uB.history.slice(len-5,len)
+    last5Arr.forEach((id)=>{
+        results.push( {
+                "id": id,
+                "players":gamesData[id].players,
+                "viewable": uB["friends"].includes(u),
+                "winner":gamesData[id].result
+        })
+
+    })
+    return results
+}
+function publicSearchUser(req,res){
+    let result;
+    //check if query exists
+    if(Object.keys(req.query).length != 0 ){
+        //check if name exists in query
+        if(req.query.name){
+            result = Object.keys(accountsData).map((name)=>name.toLowerCase()).filter((name)=>name.includes(req.query.name.toLowerCase()))
+            res.status(200).json(result)
+        }
+        else{
+            res.status(404).send("error: no param called that")
+        }
+    }
+    else{
+        //no specified param
+        result = Object.keys(accountsData)
+        res.status(200).json(result)
+    }
+    
+}
+function renderSpectateGame(req,res){
+    let id = req.params.id
+    let gameData = gamesData[id]
+    let board = JSON.stringify(gameData.history[gameData.history.length-1])
+    let players = gameData.players
+    let chat = gameData.chat
+    let turn = gameData.turn
+    let privacy = gameData.privacy
+    let spectate = true
+    res.render("game",{gameBoard:board,players:players,chat:chat,turn:turn,privacy:privacy,id:id,spectate:spectate})
+
+}
+
+
+
+function hasAuthorization(gameID,user){
+    let privacy = getGame(gameID).privacy
+    if(privacy == 'private'){
+        console.log('cant view line 313')
+        return 0;
+    }
+    else{
+        if(privacy == 'friends_only'){
+            let players = getGame(gameID).players
+            let friends = getuser(players[0]).friend.concat(getuser(players[1]).friend)
+            if(players.includes(user)){
+                return 1;
+            }
+            if(friends.includes(user)){
+                console.log("user can view game")
+                return 1;
+            }
+            else{
+                console.log("user cannot view game line 323")
+                return 0;
+            }
+        }
+    }
+}
+
+
+function sendFriendReq(req,res){
+    let user = req.session.username
+    let userB = req.params.name
+    if(Object.keys(accountsData).includes(user) && Object.keys(accountsData).includes(userB)){
+        accountsData[user].friendReq.push({"name":userB,"status":"sent"})
+        accountsData[userB].friendReq.push({"name":user,"status":"received"})
+        console.log('line 312')
+        console.log(accountsData[user].friendReq)
+        res.json(accountsData[user].friendReq)
+        // res.status(200).send(JSON.stringify({friendReq:accountsData[user].friendReq}))
+    }
+    else{
+        res.status(200).send("name not found")
+    }
+}
 
 function renderHowToPlay(req,res){
     res.render("howtoplay")
@@ -53,130 +363,124 @@ function renderHowToPlay(req,res){
 function renderSignUp(req,res){
     res.render("signup")
 }
-function renderViewProfile(req,res){
-    let user = req.session.username
-    let userB = req.params.userB
-    let data = getUserBSummary(user,userB)
-    // console.log({data})
-    res.render("viewprofile",{user:user,userB:userB,summary:data.summary,
-                            active:data.active,history:data.history})
-}
-function renderCreateGameScreen(req,res,){
-    let results = res.locals.results
-    if(results){
-        res.render("creategame",{searchResults:results})
-    }
-    else{
-        res.render("creategame")
-    }
+function renderCreateGameScreen(req,res){
+    res.render("creategame")
 }
 function renderMyFriends(req,res){
     let user = req.session.username
-    let friendReq = getFriendReq(user)
-    let allFriends = getAllFriends(user)  
-    if(res.locals.results){
-        let results = res.locals.results
-        res.render("myfriends",{user:user,friendReq:friendReq,allFriends:allFriends,searchResults:results})
-    }
-    else{  
-        res.render("myfriends",{user:user,friendReq:friendReq,allFriends:allFriends})
-    }
+    let friendReq = accountsData[user].friendReq
+    let allFriends = accountsData[user].friends
+    res.render("myfriends",{user:user,friendReq:friendReq,allFriends:allFriends})
 }
+
 function renderGame(req,res){
-    // let user = req.session.username
     let id = req.params.id
-    let gameData = getGameData(id)
+    let gameData = gamesData[id]
     let board = JSON.stringify(gameData.history[gameData.history.length-1])
     let players = gameData.players
-    let chat = gameData.chat
     let turn = gameData.turn
     let privacy = gameData.privacy
-    res.render("game",{gameBoard:board,players:players,chat:chat,turn:turn,privacy:privacy,id:id})
+    res.render("game",{gameBoard:board,players:players,turn:turn,privacy:privacy,id:id})
 }
 function renderMyProfile(req,res){
     let user = req.session.username
-    let privacy = getPrivacy(user)
+    let privacy = accountsData[user].privacy
     res.render("myprofile",{user:user,privacy:privacy})
 }
+
 function renderMyStats(req,res){
     let user = req.session.username
-    let history = getGameHistory(user)
-    console.log(history)
-    res.render("mystats",{user:user,history:history})
-
-
+    let history = accountsData[user].history
+    let summary = accountsData[user].summary
+    res.render("mystats",{user:user,history:history,summary:summary})
 }
 function renderMyGames(req,res){
     let user = req.session.username
-    let active = getActive(user)
+    let active = accountsData[user].active
     res.render("mygames",{user:user,active:active})
 }
 function renderLogin(req,res){
-    res.render("login")
-
+    if(req.session.loggedin){
+        let user = req.session.username
+        res.render("myprofile",{user:user,privacy:accountsData[user].privacy})
+    }
+    else{
+        res.render("login")
+    }
+}
+function getGame(id){
+    for(g in gamesData){
+        if(g == id){
+            return gamesData[g]
+        }
+    }
 }
 function playMove(req,res,next){
     let user = req.session.username
     let id = req.params.id
-    let gameData = getGameData(id)
-    let turn = parseInt(req.params.turn)
     let col = parseInt(req.params.col) - 1  
-    let board = gameData.history[gameData.history.length-1]
-    let userB = gamesData[id].players.indexOf(user) == 0 ?  gamesData[id].players.slice(1)[0] : gamesData[id].players.slice(0,1)[0]
-    
-    //check if it is current session user's turn
-    if(gameData.players.indexOf(user) != turn-1){
-        console.log("te")
-        res.stats(400).send("not your turn bitch")
+    let gameData = getGame(id)
+    let board = gameData["history"].last()
+    let userB = gameData.players.indexOf(user) == 0 ?  gameData.players.slice(1)[0] : gameData.players.slice(0,1)[0]
+    let data = {}
+
+    if(gameData.players.indexOf(user) != gameData.turn-1){
+        console.log("what")
+        res.status(200).send("not your turn")
     } 
+    else if(gameData.result != "na" ){
+        res.json({end:true})
+    }
     else{
-        console.log("your turn")
         if(checkMoveValid(col,board)){
             //update board
             //check winner
-            let newBoard = updateBoard(col,board,turn)
-            let data = {}
-            if(!checkWinner(newBoard)){
+            let newBoard = updateBoard(col,board,gameData.turn)
+            let winStyle = checkWinner(newBoard)
+            data = {}
+            if(!winStyle){
                 gameData.history.push(newBoard)
-                gameData.turn = turn == 1 ? 2 : 1
+                gameData.turn = gameData.turn == 1 ? 2 : 1
+                gameData.moves.push(col)
+                data = {
+                    gameBoard:newBoard,
+                    turn:gameData.players[gameData.turn - 1],
+                    id:id,
+                    end:false
+                }
 
-                data["gameBoard"] = newBoard
-                data["turn"] = gameData.players[gameData.turn - 1]
-                data["id"] = id
             }
             else{
-                console.log("winer")
                 //update winner
                 //remove from active
                 //add to history
-                for(let g in gamesData){
-                    if(id == g){
-                        gamesData[g].result = user
-                    }
-                }
+                gameData.result = user
+                gameData.winStyle = winStyle
                 removeFromActive(user,userB,id)
                 addGameToHistory(user,userB,id)
-                //go back to game screen *
-                data["end"] = true
+                data.gameBoard = newBoard
+                data.end = true
+                data.winStyle = winStyle
             }
-            res.status(200).send(JSON.stringify(data))
+            res.json(data)
         }
         else{
-            res.status(400).send("move not valid dumbass")
+            res.status(400).send("move not valid ")
         }
-       
     }
 }
+if (!Array.prototype.last){
+    Array.prototype.last = function(){
+        return this[this.length - 1];
+    };
+};
 function addGameToHistory(u,uB,id){
     accountsData[u].history.push(id)
     accountsData[uB].history.push(id)
 }
 function removeFromActive(u,uB,id){
-    for(let person in accountsData){
-        if(u == person || uB == person){
-            accountsData[u].active = accountsData[u].active.filter((e)=>e != id)
-        }
-    }
+    accountsData[u].active = accountsData[u].active.filter((e)=>e != id)
+    accountsData[uB].active = accountsData[uB].active.filter((e)=>e != id)
 }
 function logout(req, res, next){
 	if(req.session.loggedin){
@@ -184,34 +488,42 @@ function logout(req, res, next){
         next()
 	}
 }
+//     res.render("myprofile",{user:user,privacy:privacy})
+
 function login(req, res, next){
+    let message;
 	if(req.session.loggedin){
-        
-        console.log("already logged in")
-        next();
+        res.render("myprofile",{user:req.session.username,privacy:getUser(req.session.username).privacy})
     }
-    else if(req.body){
+    else if(req.body && Object.keys(req.body).length > 0){
         let username = req.body.username
         let password = req.body.password
+        let found = false;
         for (let user in accountsData){
             if(user == username){
                 if (accountsData[user].password == password){
                     req.session.loggedin = true;
                     req.session.username = req.body.username;
-                    next();
+                    found=true;
+                    res.render("myprofile",{user:req.session.username,privacy:getUser(req.session.username).privacy})
                 }
             }
         }
+        if(!found){
+            message = "Incorrect username or password"
+            res.status(401).render("login",{message:message});
+        }
     }
     else{
-        res.status(401).send("Not authorized. Invalid password.");
+            message = "Not authorized. Invalid password."
+            res.status(401).render("login",{message:message});
     }
 }
 function auth(req, res, next) {
+    let message = "please log in or sign up :)"
 	if(!req.session.loggedin){
-		res.status(401).send("Unauthorized");
-		return;
-	}
+     		return;
+    }
 	next();
 }
 function createUser(req,res,next){
@@ -236,19 +548,23 @@ function createUser(req,res,next){
         }
     }
     else{
-        res.status(400).send("Passwords do not match") //409 user exists
+        res.status(400).send("Passwords do not match")
     }
 }
-function createGame(req,res){
+function createGame(req,res,next){
     let user = req.session.username
     let userB = req.body.userB
     let privacy = req.body.privacy
     
     if(!userB || !privacy){
         res.status(400).send("incomplete form")
-    }else{
+    }
+    else if(!Object.keys(accountsData).includes(userB)){
+        res.status(400).send("user does not exist")
+    }
+    else{
         //make the game, add game to database,update userA active, update userB active
-        let uid = uuidv4();
+        let uid = String(uuidv4());
         gamesData[uid] = {
             "id":uid,
             "players":[user,userB],
@@ -272,152 +588,41 @@ function createGame(req,res){
         //update users
         accountsData[user].active.push(uid)
         accountsData[userB].active.push(uid)
-        
+        res.render("mygames",{user:req.session.username,active:accountsData[user].active})
     }
-    next()
-    // res.status(200).send("ok")
 }
-function rejectRequest(req,res,next){
+function rejectRequest(req,res){
     let user = req.session.username
-    let userB = req.params.userB
-    let len = accountsData[user].friendReq.length
-    for(let i =0;i < len;i++ ){
-        if(userB == accountsData[user].friendReq[i].name && "received"==accountsData[user].friendReq[i].status){
-            accountsData[user].friendReq.splice(i,i+1)
-            break;
-        }
-    }
-    next()
+    let userB = req.params.name
+    accountsData[user].friendReq = getUser(user).friendReq.filter((obj)=>obj.name!=userB)
+    res.json(accountsData[user].friendReq)
 }
-function removeFriend(req,res,next){
+function removeFriend(req,res){
     let user = req.session.username
-    let userB = req.params.userB
+    let userB = req.params.name
     //remove friend
-    let len = accountsData[user].friends.len
-    for(let i =0;i < len;i++ ){
-        if(userB == accountsData[user].friends){
-            accountsData[user].friends.splice(i,i+1)
-            return accountsData[user].friends
-        }
-    }
+    accountsData[user].friends = getUser(user).friends.filter(name => name != userB)
+    res.json(accountsData[user].friends)
 }
-function acceptFriend(req,res,next){
+function acceptFriend(req,res){
     let user = req.session.username
-    let userB = req.params.userB
+    let userB = req.params.name
+
     //remove userB from user requests
-    let len = accountsData[user].friendReq.length
-    for(let i =0;i < len;i++ ){
-        if(userB == accountsData[user].friendReq[i].name){
-            accountsData[user].friendReq.splice(i,i+1)
-            break;
-        }
-    }
+    accountsData[userB].friendReq = getUser(userB).friendReq.filter((name)=>name!=user)
     //remove user from userB requests
-    len = accountsData[userB].friendReq.length
-    for(let i =0;i < len;i++ ){
-        if(user == accountsData[userB].friendReq[i].name && "sent" == accountsData[userB].friendReq[i].status){
-            accountsData[userB].friendReq.splice(i,i+1)
-            break;
-        }
-    }
+    accountsData[user].friendReq = getUser(user).friendReq.filter((obj)=>obj.name!= userB)
+    
+    //update friends
     accountsData[user].friends.push(userB)
     accountsData[userB].friends.push(user)
-    res.status(200).send(JSON.stringify({"friendsArr":accountsData[user].friends,"friendReqArr":accountsData[user].friendReq})) 
-}
-function getPrivacy(u){
-    for(let user in accountsData){
-        if (u==user){
-            u = accountsData[user]
-            return u.privacy
-        }
-    }
-}
-function getGameHistory(u){
-    for(let user in accountsData){
-        if (u==user){
-            u = accountsData[user]
-            return u.history
-        }
-    }
-}
-function getActive(u){
-    for(let user in accountsData){
-        if (u==user){
-            u = accountsData[user]
-            return u.active
-        }
-    }
-}
-function getFriendReq(u){
-    for(let user in accountsData){
-        if (u==user){
-            u = accountsData[user]
-            return u.friendReq
-        }
-    }
-}
-function getAllFriends(u){
-    for(let user in accountsData){
-        if (u==user){
-            u = accountsData[user]
-            return u.friends
-        }
-    }
-}
-function getUserBSummary(currUser,uB){
-    let result = {}
 
-    for(let user in accountsData){
-        if (uB==user){
-            uB = accountsData[user]
-            result["summary"] = uB.summary
-            result["active"] = getViewableActiveGames(currUser,uB)
-            result["history"] = getMoreInfoOnLast5Game(currUser,uB)
-            return result
-        }
-    }
-}
-function getViewableActiveGames(u,uB){
-    let results = []
-
-    uB.active.forEach((id)=>{
-        let p = gamesData[id].privacy
-        if(p=="friends_only"){
-            if(uB.friends.includes(u)){
-                results.push(id)
-            }
-        }
-        else if(p=="public"){
-            results.push(id)
-        }
+    res.status(200).json({
+        'friendsArr':getUser(user).friends,
+        'friendReqArr':getUser(user).friendReq
     })
-    return results
 }
-function getMoreInfoOnLast5Game(u,uB){
-    let results = []
 
-    let len = uB.history.length
-    let last5Arr = len<=5 ? uB.history : uB.history.slice(len-5,len)
-    last5Arr.forEach((value)=>{
-        for(let g in gamesData){
-            if(value == g){
-                results.push( {"id": g,
-                        "players":gamesData[g].players,
-                        "viewable": uB["friends"].includes(u),
-                        "winner":gamesData[g].result
-                })
-            }
-        }
-    })
-    return results
-}
-function getGameData(id){
-    for(let g in gamesData){
-        if(id == g){
-            return gamesData[g]
-        }
-    }
-}
 //take in column number 
 //return 1 if move is valid, 0 if move is not valid
 function checkMoveValid(col_num, board) {
@@ -462,24 +667,28 @@ function checkWinner(board) {
                     if (j < 5) {
                         if (board[i][j] == board[i][j + 1] && board[i][j] == board[i][j + 2] && board[i][j] == board[i][j + 3]) {
                             console.log("win by row");
-                            return node == 1 ? 1 : 2;
+                            return 1;
+                            // return node == 1 ? 1 : 2;
                         }
                     }
                     if (i < 7) {
                         if (board[i][j] == board[i + 1][j] && board[i][j] == board[i + 2][j] && board[i][j] == board[i + 3][j]) {
                             console.log("win by column");
-                            return node == 1 ? 1 : 2;
+                            return 2;
+                            // return node == 1 ? 1 : 2;
                         }
 
                         if (node == board[i + 1][j - 1] && node == board[i + 2][j - 2] && node == board[i + 3][j - 3]) {
                             console.log("win by diagonal2");
-                            return node == 1 ? 1 : 2;
+                            return 3;
+                            // return node == 1 ? 1 : 2;
                         }
 
                         if (j < 5) {
                             if (node == board[i + 1][j + 1] && node == board[i + 2][j + 2] && node == board[i + 3][j + 3]) {
                                 console.log("win by diagonal1");
-                                return node == 1 ? 1 : 2;
+                                return 4;
+                                // return node == 1 ? 1 : 2;
                             }
                         }
                     }
@@ -492,26 +701,18 @@ function checkWinner(board) {
     }
     return 0;
 }
-
-function searchUser(req,res){
-    let name = req.params.userB
-    res.status(200).send(JSON.stringify(Object.keys(accountsData).filter((user)=>user.includes(name))))
-}
 function forfeitGame(req,res){
     let user = req.session.username
     let userB; 
     let id = req.params.id
     //set winner
-    for(let g in gamesData){
-        if(id == g){
-            let winner = gamesData[g].players.indexOf(user) == 0 ?  gamesData[g].players.slice(1)[0] : gamesData[g].players.slice(0,1)[0]
-            userB = winner
-            gamesData[g].result = winner
-            // console.log(winner)
-
-            break
-        }    }
-    // console.log(userB)
+    if(gamesData[id].players[0] == user){
+        userB = gamesData[id].players[1]
+    }
+    else{
+        userB = gamesData[id].players[0]
+    }
+    gamesData[id].winner = userB
 
     //remove active user A user B
     //add to history user A user B
@@ -519,14 +720,17 @@ function forfeitGame(req,res){
     addGameToHistory(user,userB,id)
     
     //return active games
-    // console.log(accountsData[user].active)
-    res.status(200).send(JSON.stringify(accountsData[user].active))
+    res.json(accountsData[user].active)
 }
 function updatePrivacy(req,res,next){
+    getUser(req.session.username).privacy = req.body.privacy
+    res.render("myprofile")
+}
+
+function getUser(name){
     for(let u in accountsData){
-        if(u == req.session.username){
-            accountsData[u].privacy = req.body.privacy
-            next()
-        }    
+        if(name == u){
+            return accountsData[u]
+        }
     }
 }

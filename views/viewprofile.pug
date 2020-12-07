@@ -4,22 +4,41 @@ head
 body
     include ./components/navbar
     .under-nav-container
-        h2 Viewing #{userB}'s profile
-        h3 Summary statistics:
-        h5 Total games played: #{summary.total}
-        h5 Win percentage: #{summary.win/summary.total*100}
-        h3 Current active games:
-        each game_id in active
-            h5 Game id: #{game_id} 
-                a(href="/viewGame/"+game_id) View
-        h3 Last 5 Games:
+        div(style="display:flex;flex-direction:row;")
+            img(src='/user.png' alt='Connect 4 board' style="width:30px;height:30px;margin-right:10px;")
+            h4 #{name}'s profile
+        div.card(style="margin-top:10px;max-width:400px;")
+            div.card-title
+                h5 Summary Statistics
+            div.card-body
+                h5 Total games played: #{total}
+                h5 Total wins: #{wins}
+                h5 Win percentage: #{winPercentage}
+        div(style="display:flex;flex-direction:row;margin-right:10px;")
+            img(src='/crossed.png' alt='Connect 4 board' style="width:30px;height:30px;margin-right:10px;")
+            h4 Current Active Games
+        div.card(style="margin-top:10px;max-width:400px;")
+            div.card-body
+                each game_id in active
+                    h5 Game id ##{game_id} 
+                        a(class="btn btn-secondary" style="margin-left:5px;margin-right:5px;" href="/spectateGame/"+game_id) Spectate
+        div(style="display:flex;flex-direction:row;margin-right:10px;")
+            img(src='/history.png' alt='Connect 4 board' style="width:30px;height:30px;margin-right:10px;")
+            h4 Last 5 Games
         each obj in history
-            h5 Game id: #{obj.id} 
-                if obj.viewable
-                    a(href="/viewGame/"+game_id) View
-                else
-                    span cannot view a private game
-            h5 Players: #{obj.players} 
-            h5 Winner:#{obj.winner}
 
-
+            div.card(style="margin-top:10px;max-width:400px;")
+                div.card-body
+                    div(style="display:flex;flex-direction:row;margin-right:10px;")
+                        img(src='/checker-board.png' alt='Connect 4 board' style="width:150px;height:150px;margin-right:10px;")
+                        div
+                            h5.card-text Game id: #{obj.id} 
+                                if obj.viewable
+                                    a(class="btn btn-secondary" style="margin-left:5px;margin-right:5px;" href="/viewGame/"+game_id) Spectate
+                            div(style="display:flex;flex-direction:row;margin-right:10px;")
+                                h5.card-text Players: 
+                                h5.card-text #{obj.players} 
+                            if obj.winner == "na"
+                                h5.card-text In progress
+                            else
+                                h5.card-text Winner:#{obj.winner}

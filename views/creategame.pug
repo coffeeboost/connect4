@@ -4,23 +4,25 @@ head
 body
     include ./components/navbar
     .under-nav-container
-        h2 Search For Player:
+        h4 Step 1: Search For Player
         include ./components/search.pug
-        h2 Create Game
-        form(action='/createGame', method='post')
-            label(for='createGame') Opponent name
-            br
-            input(name='userB', type='text')
-            br
-            label(for='createGame') Choose your privacy
-            br
-            input(name='privacy', type='radio',value="public")
-            label(for='createGame') Public
-            br
-            input(name='privacy', type='radio',value="private")
-            label(for='createGame') Private
-            br
-            input(name='privacy', type='radio',value="friends_only")
-            label(for='createGame') Friends only
-            br
-            input(type='submit', value='Create Game')
+        h4 Step 2: Create Game
+        div.card(style="padding-left:10px;max-width:600px;")
+            form(action='/createGame', method='post')
+                div.form-group
+                    label(for='createGame' class="form-check-label") Opponent name
+                    input(name='userB', type='text' class="form-control" style="max-width:400px;")
+                div.form-check
+                    label(for='createGame' class="form-check-label") Choose your privacy
+                div.form-check
+                    input(name='privacy', type='radio',value="public" class="form-check-input")
+                    label(for='createGame' class="form-check-label") Public
+                div.form-check
+                    input(name='privacy', type='radio',value="private" class="form-check-input")
+                    label(for='createGame' class="form-check-label") Private
+                div.form-check
+                    input(name='privacy', type='radio',value="friends_only" class="form-check-input")
+                    label(for='createGame' class="form-check-label") Friends only
+                div.form-check
+                    input(type='submit' value='Create Game +' class="btn btn-info")
+        include ./components/footer

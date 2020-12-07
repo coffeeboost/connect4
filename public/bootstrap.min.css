@@ -4,6 +4,19 @@
  * Copyright 2011-2020 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
  */
+.under-nav-container {
+    padding-top:15px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+.alert-fixed {
+    position:fixed; 
+    top: 0px; 
+    left: 0px; 
+    width: 100%;
+    z-index:9999; 
+    border-radius:0px
+}
 :root {
     --blue: #007bff;
     --indigo: #6610f2;
@@ -69,7 +82,8 @@ body {
     line-height: 1.5;
     color: #212529;
     text-align: left;
-    background-color: #fff
+    /* background: radial-gradient(#e66465, #D60620) ; */
+    background: radial-gradient(#f6ece2, #c4ad84);
 }
 
 [tabindex="-1"]:focus:not(:focus-visible) {
@@ -118,7 +132,8 @@ dl,
 ol,
 ul {
     margin-top: 0;
-    margin-bottom: 1rem
+    margin-bottom: 1rem;
+    list-style-type: none;
 }
 
 ol ol,
@@ -167,9 +182,11 @@ sup {
 }
 
 a {
-    color: #007bff;
+    color: #000000;
     text-decoration: none;
-    background-color: transparent
+    background-color: transparent;
+    border-width: 5px;
+    border-radius: 0.25;
 }
 
 a:hover {
@@ -2849,7 +2866,7 @@ textarea.form-control.is-invalid {
 }
 
 @media (prefers-reduced-motion:reduce) {
-    .btn {
+    .blockquote {
         transition: none
     }
 }
@@ -5228,9 +5245,9 @@ input[type=submit].btn-block {
     flex-direction: column;
     min-width: 0;
     word-wrap: break-word;
-    background-color: #fff;
+    background-color:#ff80d5;
     background-clip: border-box;
-    border: 1px solid rgba(0, 0, 0, .125);
+    border: 5px solid rgba(0, 0, 0, .125);
     border-radius: .25rem
 }
 

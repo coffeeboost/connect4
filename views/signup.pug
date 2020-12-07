@@ -2,17 +2,22 @@ head
   include ./components/header  
   title Sign Up
 body
-  include ./components/navbar
+  include ./components/notloggedinnavbar
   
   div.under-nav-container
-    h4 SIGN UP
-    form(action="/signup" method="POST")
-        label(for='signup') Username
-        input(type="text" name="username")
-        br
-        label(for='signup') Password
-        input(type="text" name="password")
-        br
-        label(for='signup') Re-type Password
-        input(type="text" name="retype")
-        button(type="submit") Sign Up
+    div.container-fluid
+      div(style="display:flex;justify-content: center;")
+        img(src='/connect.png' alt='Connect 4 board' style="width:300px;height:300px;")
+      h4.row SIGN UP
+      form(action="/signup" method="POST")
+        div.row
+          label(for='signup' class="col-4") Username
+          input(type="text" name="username" class="col-8")
+        div.row
+          label(for='signup' class="col-4") Password
+          input(type="text" name="password" class="col-8")
+        div.row
+          label(for='signup' class="col-4") Re-type Password
+          input(type="text" name="retype" class="col-8")
+        div.row
+          button(type="submit" class="col btn btn-info") Sign Up

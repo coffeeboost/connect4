@@ -2,17 +2,27 @@ head
   include ./components/header  
   title Login
 body
-  include ./components/navbar
+  if loggedIn
+    include ./components/navbar
+  else
+    include ./components/notloggedinnavbar
   
-  div.under-nav-container
-    h4 LOG IN
+  div.container-fluid
+    div(style="display:flex;justify-content: center;")
+      img(src='/connect.png' alt='Connect 4 board' style="width:300px;height:300px;")
+    h4.row LOG IN
     form(action="/login" method="POST")
-      label(for='username') Username
-      input(type="text" name="username")
-      br
-      label(for='password') Password
-      input(type="text" name="password")
-      button(type="submit") Log In
+      div.form-row
+        input(type="text" name="username" class ="col" placeholder="Username" style="height:40px;")
+        input(type="text" name="password" class="col" placeholder="Password" style="height:40px;")
+      div.row
+        button(type="submit" class="col btn btn-info" style="margin-top:10px;") Log In
+    if !first
+      h4 !{message}
+    else if message
+      h4 !{message}
+    
+
   footer(class="page-footer fixed-bottom ")
     .container
       ul(class="list-unstyled. ist-inline text-center py-2")
@@ -20,3 +30,4 @@ body
           h5.mb-1 Don't have an account?
         li.list-inline-item
           a.btn.btn-outline-white.btn-rounded(href='/signup') Sign up!
+    include ./components/footer

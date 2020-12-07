@@ -7,93 +7,46 @@ body
   include ./components/navbar
 
   .under-nav-container
-    h2 Friend Requests:
-    ul#friendReqID
-      each x in friendReq
-        li
-          = x.name
-          a(class='button' href='/viewProfile/' + x.name) view 
-          if x.status == "received"
-            button(onclick='putRequest(\''+'accept'+'\',\''+x.name+'\')') accept
-            button(onclick='deleteRequest(\''+'reject'+'\',\''+x.name+'\')') reject
-      
-    h2#friendsID All Friends:
-    each x in allFriends
-      ul
-        li
-          = x
-          a( class='button' href='/viewProfile/' + x) view 
-          a(class='button' href='/createGame') match 
-          button(onclick='deleteRequest(\''+'remove'+'\',\''+x+'\')') remove
-  include ./components/search.pug
-  h2 Send Friend Request Form:
-  h4 Does not exist yet...
-
-
-  script. 
-    function search(){
-        let req = new XMLHttpRequest();
-        console.log(document.getElementById("userInput").value)
-        req.onreadystatechange = function(){
-          if (this.readyState == 4 && this.status == 200) {
-            let resultContainer = document.getElementById("results")
-            results.innerHTML = ""
-            results.innerHTML = JSON.parse(req.responseText)
-          }
-        }
-        req.open("POST",`/user/${document.getElementById("userInput").value}`);
-        req.send();
-      }
-    function putRequest(route,name){
-      console.log("http://localhost:3000/"+route+"/"+name)
-      let req = new XMLHttpRequest();
-      req.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          let resFriendReq = JSON.parse(req.responseText).friendReqArr
-          let resFriend = JSON.parse(req.responseText).friendsArr
-
-          let listParent = document.getElementById("friendReqID")
-          listParent.innerHTML = ""
-          resFriendReq.forEach((obj)=>{
-
-            let listChild = document.createElement("li")
-            listChild.innerHTML =  obj.name
-            let viewAnchorTag = document.createElement("a")
-            viewAnchorTag.class = "button"
-            viewAnchorTag.href = `/viewProfile/${obj.name}`
-            viewAnchorTag.innerHTML = "view"
-            listChild.append(viewAnchorTag)
-        
-            if(obj.status == "received"){
-              let acceptButtonTag = document.createElement("button")
-              let rejectButtonTag = document.createElement("button")
-
-              acceptButtonTag.onclick = `putRequest(\"accept\",\"${obj.name}\")`
-              acceptButtonTag.innherHTML = "accept"            
-              acceptButtonTag.class = "button"
-
-              rejectButtonTag.onclick = `deleteRequest(\"reject\",\"${obj.name}\")`
-              rejectButtonTag.innherHTML = "reject"            
-              rejectButtonTag.class = "button"
-
-              listChild.append(acceptButtonTag)            
-              listChild.append(rejectButtonTag)
-
-            }
-            listParent.append(listChild)
-          })
-        }
-      }
-      req.open("PUT","/"+route+"/"+name);
-      req.send();
-    }
-    function deleteRequest(route,name){
-      let req = new XMLHttpRequest();
-      xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById(route+"-"+name).innerHTML = "friendReqID";
-        }
-      }
-      req.open("DELETE","/"+route+"/"+name);
-      req.send();
-    }
+    div#alert(class=`sticky-top`)
+    div(style="display:flex;flex-direction:row;")
+      img(src='/group.png' alt='Connect 4 board' style="width:35px;height:35px;margin-right:10px;")
+      h4 Friend Requests:
+    div.card(style="margin-top:10px;max-width:400px;")
+      div.card-body 
+        div#friendReqID
+          ul
+            each x in friendReq
+              li
+                div(style="display:flex;flex-direction:row;")
+                  img(src='/user.png' alt='Connect 4 board' style="width:20px;height:20px;margin-right:10px;") 
+                  h5.card-text #{x.name}
+                a(style="margin-right:5px;" class='btn btn-info' href='/users/' + x.name) view 
+                if x.status == "received"
+                  a(style="margin-right:5px;" class='btn btn-success' href='javascript:acceptFriend(\''+x.name+'\')') accept
+                  a(style="margin-right:5px;" class='btn btn-danger' href='javascript:rejectFriend(\''+x.name+'\')') reject            
+    
+    div(style="display:flex;flex-direction:row;margin-top:10px;")
+      img(src='/friends.png' alt='Connect 4 board' style="width:30px;height:30px;margin-right:10px;")
+      h4#friendsID All Friends:
+    div.card(style="margin-top:10px;max-width:400px;")
+      div.card-body 
+        div#friendList
+          ul
+            each x in allFriends
+              li
+                div(style="display:flex;flex-direction:row;")
+                  img(src='/user.png' alt='Connect 4 board' style="width:20px;height:20px;margin-right:10px;") 
+                  h5.card-text #{x}
+                a(style="margin-right:5px;" class='btn btn-info' href='/users/' + x) view 
+                a(style="margin-right:5px;" class='btn btn-primary' href='/createGame') match 
+                a(style="margin-right:5px;" class='btn btn-danger' href='javascript:deleteFriend(\''+x+'\')') remove
+    div(style="display:flex;flex-direction:row;margin-top:10px;")
+      img(src='/paper-plane.png' alt='Connect 4 board' style="width:30px;height:30px;margin-right:10px;")
+      h4 Send Friend Request
+    h4 Step 1: Search for Player
+    include ./components/search.pug
+    h4 Step 2: Send friend request
+    form
+      input(id="sendName" type="text" name="title" class="form-control" placeholder="Friend name")
+      a(class="col btn btn-info" href="javascript:sendFriend()") Send
+    include ./components/footer

@@ -1,5 +1,9 @@
-form(action="/user" method="POST")
-    p search:
-      input(id="userInput" type="text" name="title")
-    a(href="javascript:search()") Submit
+div.card(style="max-width:600px;")
+  div.card-body
+    div(style="display:flex;flex-direction:row;")
+      img(src='/loupe.png' alt='Connect 4 board' style="width:30px;height:30px;margin-right:10px;")
+      h6 Look up a username to play games with or add as friend!
+    div(class="d-flex")
+      input(id="userInput" type="text" name="title" placeholder="Search")
+      a(class="btn-sm btn-info" style="padding: 10px 15px; text-align: center;" href="javascript:search()") Submit
     div#results

@@ -1,13 +1,35 @@
 head
   include ./components/header  
+  script(src ="/script.js")
   title My Stat
 body
   include ./components/navbar
 
   .under-nav-container
-  h2 #{user}'s Statistics
-  h3 All Game History 
-  if history
-    h4 #{history}
-  else
-    h4 no game in history
+    div(style="display:flex;flex-direction:row;")
+      img(src='/user.png' alt='Connect 4 board' style="width:30px;height:30px;margin-right:10px;")
+      h4 #{user}'s statistics
+    div.card(style="margin-top:10px;")
+      div.card-body
+        h5.card-title
+          | games played: #{summary.total}
+        h5.card-title
+          | games won: #{summary.win}
+    div(style="display:flex;flex-direction:row;")
+      img(src='/history.png' alt='Connect 4 board' style="width:30px;height:30px;margin-right:10px;")
+      h4 All Game History 
+    if history
+      h4#historyID 
+      ul
+        each g in history
+          div.card(style="margin-top:10px;max-width:400px;")
+            div.card-body
+              h5.card-title
+                li
+                  = "game #" + g 
+                  br
+                  img(src='/checker-board.png' alt='Connect 4 board' style="width:150px;height:150px;margin-right:10px;")
+                  a(class="btn btn-info" href="load/"+g+"?index=0") view
+    else
+      h4 no game in history
+    include ./components/footer

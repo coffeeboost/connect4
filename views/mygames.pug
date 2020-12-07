@@ -5,71 +5,29 @@ body
   include ./components/navbar
 
   .under-nav-container
-  h2 #{user}'s account
-  h3 Current active games:
-  if active.length == 0
-    h4#activeID  no active games
-  else
-    h4#activeID 
-      ul
-        each g in active
-          li
-            = "game #" + g 
-            a(class="button" href="javascript:forfeit(\""+g+"\")") forfeit
-            a(class='button' href='/game/' + g) play
-  include ./components/search.pug
-
-  script. 
-    function search(){
-      let req = new XMLHttpRequest();
-      console.log(document.getElementById("userInput").value)
-      req.onreadystatechange = function(){
-        if (this.readyState == 4 && this.status == 200) {
-          let resultContainer = document.getElementById("results")
-          results.innerHTML = ""
-          results.innerHTML = JSON.parse(req.responseText)
-        }
-      }
-      req.open("POST",`/user/${document.getElementById("userInput").value}`);
-      req.send();
-    }
-    function forfeit(g){
-      console.log("forf")
-      let req = new XMLHttpRequest();
-      req.onreadystatechange = function(){
-        if (this.readyState == 4 && this.status == 200) {
-          let activeArr = JSON.parse(req.responseText)
-          console.log({activeArr})
-          //render active games
-          let activeParent = document.getElementById("activeID")
-          activeParent.innerHTML = ""
-          let activeChild = document.createElement("h4")         
-          if(activeArr.length == 0){
-            activeChild.innherHTML = "no active games"
-          }
-          else{
-            let listParent = document.createElement("ul")
-            activeArr.forEach((gameID)=>{
-              let listChild = document.createElement("li")
-              let forfeitAnchorTag = document.createElement("a")
-              let playAnchorTag = document.createElement("a")
-              forfeitAnchorTag.class = "button"
-              forfeitAnchorTag.href = `forfeit(\'${gameID}\')`
-              forfeitAnchorTag.innerHTML = "forfeit"
-              playAnchorTag.class = "button"
-              playAnchorTag.href = `/game/${gameID}`
-              playAnchorTag.innerHTML = "play"   
-              listChild.innerHTML = `game #${gameID}`
-              listChild.append(forfeitAnchorTag)          
-              listChild.append(playAnchorTag)     
-              listParent.append(listChild)
-            })
-            activeChild.append(listParent)
-          }
-          activeParent.append(activeChild)
-        }
-      }
-      req.open("PUT",`/forfeit/${g}`);
-      req.send();
-    }
-
+    div(style="display:flex;flex-direction:row;")
+      img(src='/user.png' alt='Connect 4 board' style="width:30px;height:30px;margin-right:10px;")
+      h4 #{user}'s account
+    div(style="display:flex;flex-direction:row;margin-right:10px;")
+      img(src='/crossed.png' alt='Connect 4 board' style="width:30px;height:30px;margin-right:10px;")
+      h4 Current active games:
+    if active.length == 0
+      h4#activeID  no active games
+    else
+      h4#activeID
+        ul
+          each g in active
+            div.card(style="margin-top:10px;max-width:400px;")
+              div.card-body
+                h5.card-title
+                  li
+                    = "game #" + g 
+                    br
+                    img(src='/checker-board.png' alt='Connect 4 board' style="width:150px;height:150px;margin-right:10px;")
+                    a(class="btn btn-secondary" style="margin-left:5px;margin-right:5px;" href="javascript:forfeit(\""+g+"\")") forfeit
+                    a(class='btn btn-info' href='/game/' + g) play
+    div(style="display:flex;flex-direction:row;")
+      img(src='/group.png' alt='Connect 4 board' style="width:35px;height:35px;margin-right:10px;")
+      h4 Search for Player
+    include ./components/search.pug
+    include ./components/footer
