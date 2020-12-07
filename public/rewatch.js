@@ -1,7 +1,3 @@
-//everything here was copy and pasted, could be exported to modules
-//this is for watching a past game
-//only difference is the lack of the periodic update
-//requests were made directly with the buttons, this script only drew the response from the server
 game_row = 10
 game_col = 8
 
@@ -73,35 +69,3 @@ function createAlert(className,innerHTML){
     div.append(but)
     alert.appendChild(div)
   }
-// window.onload = function() {
-//     canvas = document.getElementById("gameCanvas");
-//     canvas.width = 0.4 * 10000;
-//     canvas.height = 0.5 * 10000;
-//     drawGame(gameBoard)
-// };
-// function drawGame(gameBoard){
-//     canvas = document.getElementById("gameCanvas");
-//     canvas.width = 0.4 * 10000;
-//     canvas.height = 0.5 * 10000;
-//     ctx = canvas.getContext("2d");
-//     radius = canvas.width / game_col / 2
-//     for (i = 0; i < game_row; i++) {
-//         for (j = 0; j < game_col; j++) {
-//             let center_y = canvas.height / game_row * i + 0.5 * (canvas.height / game_row);
-//             let center_x = canvas.width / game_col * j + 0.5 * (canvas.width / game_col);
-//             if (gameBoard[i][j] == 0) {
-//                 drawChip(center_x, center_y, radius - 2, "grey", ctx);
-//             } else if (gameBoard[i][j] == 1) {
-//                 drawChip(center_x, center_y, radius - 2,"red", ctx);
-//             } else {
-//                 drawChip(center_x, center_y, radius - 2, "green", ctx);
-//             }
-//         }
-//     }  
-//     function drawChip(center_x, center_y, radius, color) {
-//         ctx.beginPath();
-//         ctx.arc(center_x, center_y, radius, 0, 2 * Math.PI);
-//         ctx.fillStyle = color;
-//         ctx.fill();
-//     } 
-// }
