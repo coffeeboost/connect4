@@ -1,3 +1,7 @@
+//AJAX to server
+//sends user input
+//server responds with matching names
+//handle response
 function search(){
   let req = new XMLHttpRequest();
   req.onreadystatechange = function(){
@@ -20,6 +24,9 @@ function search(){
   req.open("GET",`/users?name=`+`${document.getElementById("userInput").value}`);
   req.send();
 }
+//user forfeits game
+//send request to server
+//if successfull update list
 function forfeit(g){
     let req = new XMLHttpRequest();
     req.onreadystatechange = function(){
@@ -68,6 +75,9 @@ function forfeit(g){
     req.open("PUT",`/forfeit/${g}`);
     req.send();
 }
+//user accepts friend
+//send request to server
+//if successfull update list
 function acceptFriend(name){
   let req = new XMLHttpRequest();
   req.onreadystatechange = function() {
@@ -81,6 +91,9 @@ function acceptFriend(name){
   req.open("PUT",`/users/${name}`);
   req.send();
 }
+//user reject friend
+//send request to server
+//if successfull update list
 function rejectFriend(name){
   let req = new XMLHttpRequest();
   req.onreadystatechange = function() {
@@ -92,6 +105,9 @@ function rejectFriend(name){
   req.open("DELETE","/users/"+name);
   req.send();
 }
+//user delete friend
+//send request to server
+//if successfull update list
 function deleteFriend(name){
   let req = new XMLHttpRequest();
   req.onreadystatechange = function() {
@@ -103,6 +119,9 @@ function deleteFriend(name){
   req.open("DELETE","/friend/"+name);
   req.send();
 }
+//user send a friend request
+//send request to server
+//if successfull update list
 function sendFriend(){ 
   let req = new XMLHttpRequest();
   let input = document.getElementById("sendName").value
@@ -121,17 +140,10 @@ function sendFriend(){
   req.open("PUT",`/friend/${input?input:"NO_USER_INPUT"}`);
   req.send();
 }
-// function viewGame(gameID, index){
-//   let req = new XMLHttpRequest();
-//   req.onreadystatechange = function() {
-//     if (this.readyState == 4 && this.status == 200) {
-//       console.log(req.responseText)
-//     }
-//   }
-//   req.open("GET",`/load/${gameID}?index=${index}`);
-//   req.setRequestHeader("Accept","text/html")
-//   req.send();
-// }
+//helper function
+//create alert
+//takes class of alert(danger, warning, success etc.) and the message in the alert
+//could be exported as module
 function createAlert(className,innerHTML){
   let alert = document.getElementById('alert')
   let div = document.createElement('div')
@@ -150,12 +162,14 @@ function createAlert(className,innerHTML){
   div.append(but)
   alert.appendChild(div)
 }
+//helper function
+//update friend request list
+//takes an array
 function updateFriendReqList(arr){
    let friendReqID = document.getElementById("friendReqID")
       friendReqID.innerHTML = ""
       let ul = document.createElement("ul")
       arr.forEach((obj)=>{
-        // console.log(obj)
         let li = document.createElement("li")
         let div = document.createElement("div")
         let img = document.createElement("img")
@@ -193,6 +207,9 @@ function updateFriendReqList(arr){
       })
       friendReqID.appendChild(ul)
 }
+//helper function
+//update friend list
+//takes an array
 function updateFriendList(arr){
   let friendID = document.getElementById('friendList')
   friendID.innerHTML = ''
